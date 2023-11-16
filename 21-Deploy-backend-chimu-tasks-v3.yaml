@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-tasksv3-chimu
+  namespace: dev
+  labels:
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ms-tasksv3-chimu
+  template:
+    metadata:
+      labels:
+        app: ms-tasksv3-chimu
+        tier: backend
+    spec:
+# indica el secret a usar (contiene acceso a container registry) 06
+      imagePullSecrets:
+        - name: cregistry-bq-secret
+      containers:
+        - name: ms-tasksv3-chimu
+        # imagen v1.0.34 funcionando OK; previa a recalculo de peso promedio
+          image: gcr.io/chimu-335413/back-tasks-v3:v1.0.39
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3032
+# injecta las variables de ambiente desde el secretstore (04)
+          envFrom:
+            - secretRef:
+                  name: secret-ms-ingress
+# declara donde se montan los volumenes
+          volumeMounts:
+          - mountPath: /opt/gcp
+            name: service-account-credentials-volume
+            readOnly: true
+          resources:
+            requests:
+              memory: "170Mi"
+              cpu: "50m"
+            limits:
+              memory: "220Mi"
+              cpu: "100m"
+  # #para saber si el pod esta vivo, si falla se reinicia
+  #         livenessProbe:
+  #           httpGet:
+  #             path: /status
+  #             port: 3032
+  #           failureThreshold: 3
+  #           initialDelaySeconds: 3
+  #           periodSeconds: 3
+  # #para indicar que el pod está listo para recibir trafico
+  #         readinessProbe:
+  #           httpGet:
+  #             path: /status
+  #             port: 3032
+  #           initialDelaySeconds: 5
+  #           periodSeconds: 3
+  # # chequear conexión a base de datos, pub/sub, bigquery
+  #         startupProbe:
+  #           httpGet:
+  #             path: /scheck
+  #             port: 3032
+  #           failureThreshold: 10
+  #           periodSeconds: 5
+  
+  #Volumen tipo secret, se usa para pasar las cuentas de servicio de pubsub y bigquery a el pod (05)
+      volumes:
+      - name: service-account-credentials-volume
+        secret:
+          secretName: pubsub-bq-secret
+          items:
+          - key: pubsub-access-credentials
+            path: credentials.json
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-tasksv3-chimu-svc
+  namespace: dev
+spec:
+  type:  ClusterIP
+  selector:
+    app: ms-tasksv3-chimu
+  ports:
+  - protocol: TCP
+    port:  8080
+    targetPort:  3032
+    name: tcp-8080

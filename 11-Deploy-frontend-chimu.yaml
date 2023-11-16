@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-chimu
+  namespace: dev
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-chimu
+  template:
+    metadata:
+      labels:
+        app: frontend-chimu
+        tier: frontend
+    spec:
+      imagePullSecrets:
+        - name: cregistry-bq-secret
+      containers:
+        - name: frontend-chimu
+        #imagen 1.0.46 OK
+        #imagen v1.0.47 OK
+          image: gcr.io/chimu-335413/frontend_chimuv3:v1.0.48
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          # envFrom:
+          #   - secretRef:
+          #         name: secret-ms-ingress
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "100m"
+            limits:
+              memory: "100Mi"
+              cpu: "200m"
+          # livenessProbe:
+          #       httpGet:
+          #           path: /index.html
+          #           port: 80
+          #       initialDelaySeconds: 15
+          #       timeoutSeconds: 2
+          #       periodSeconds: 5
+          #       failureThreshold: 1
+          # readinessProbe:
+          #     httpGet:
+          #         path: /index.html
+          #         port: 80
+          #     initialDelaySeconds: 15
+          #     periodSeconds: 5
+          #     failureThreshold: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-chimu-svc
+  namespace: dev
+spec:
+  type:  ClusterIP
+  selector:
+    app: frontend-chimu
+  ports:
+  - protocol: TCP
+    port:  8080
+    targetPort:  80
+    name: tcp-8080

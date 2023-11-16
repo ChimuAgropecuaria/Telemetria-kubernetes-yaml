@@ -1,0 +1,34 @@
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: hpa-ms-ingressv3-chimu
+#   namespace: dev
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: ms-ingressv3-chimu
+#   minReplicas: 2
+#   maxReplicas: 4
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       target:
+#         type: Utilization
+#         averageUtilization: 80
+
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-ms-ingressv3-chimu
+  namespace: dev
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ms-ingressv3-chimu
+  minReplicas: 4
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 80

@@ -1,0 +1,121 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-ms-ingress-chimu
+  namespace: dev
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # nginx.ingress.kubernetes.io/websocket-services: "ms-back-chimu-auth-svc"
+    # nginx.org/websocket-services: "ms-back-chimu-auth-svc"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000,https://k8s.sateldata.cl,http://localhost:5173"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/use-regex: "true"
+    # nginx.ingress.kubernetes.io/configuration-snippet: |
+    #   location /socket.io {
+    #     rewrite ^/socket.io/(.*) /$1 break;
+    #   }
+    # nginx.ingress.kubernetes.io/add-base-url: "true"
+    # nginx.ingress.kubernetes.io/configuration-snippet: |
+    #   rewrite ^([^.?]*[^/])$ /$1 redirect;
+    # nginx.ingress.kubernetes.io/websocket-services: ms-back-chimu-auth-svc
+    # nginx.org/websocket-services: ms-back-chimu-auth-svc
+    # nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    # nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+
+spec:
+  tls:
+    - hosts:
+        - k8s.sateldata.cl
+      secretName: k8s-tls
+    - hosts:
+        - chimu.sateldata.cl
+      secretName: chimu-tls
+  rules:
+    - host: k8s.sateldata.cl
+      http:
+        paths:
+          # - path: /(.*)
+          #v3 MS con entrada de datos 30s, 1m , 1h, 1d
+          - path: /api/v3/ingress
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-ingressv3-chimu-svc
+                port:
+                  number: 8080
+          - path: /api/v3/ingress/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-ingressv3-chimu-svc
+                port:
+                  number: 8080
+
+          - path: /api/v3/recovery
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-back-chimu-recovery-svc
+                port:
+                  number: 8080
+          - path: /api/v3/recovery/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-back-chimu-recovery-svc
+                port:
+                  number: 8080
+          #frontend
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-chimu-svc
+                port:
+                  number: 8080
+    - host: chimu.sateldata.cl
+      http:
+        paths:
+          # - path: /(.*)
+          #v3 MS con entrada de datos 30s, 1m , 1h, 1d
+          - path: /api/v3/ingress
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-ingressv3-chimu-svc
+                port:
+                  number: 8080
+          - path: /api/v3/ingress/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-ingressv3-chimu-svc
+                port:
+                  number: 8080
+          - path: /api/v3/recovery
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-back-chimu-recovery-svc
+                port:
+                  number: 8080
+          - path: /api/v3/recovery/(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-back-chimu-recovery-svc
+                port:
+                  number: 8080
+          #frontend
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-chimu-svc
+                port:
+                  number: 8080 

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-back-chimu-auth
+  namespace: dev
+  labels:
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-back-chimu-auth
+  template:
+    metadata:
+      labels:
+        app: ms-back-chimu-auth
+        tier: backend
+    spec:
+      imagePullSecrets:
+        - name: cregistry-bq-secret
+      containers:
+        - name: ms-back-chimu-auth
+        #imagen 1.0.93 OK
+        #imagen 1.0.96 OK
+        #imagen 1.0.99 OK
+          image: gcr.io/chimu-335413/back-chimu-auth:v1.1.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3032
+          envFrom:
+            - secretRef:
+                  name: secret-ms-ingress
+          volumeMounts:
+          - mountPath: /opt/gcp
+            name: service-account-credentials-volume
+            readOnly: true
+          # - mountPath: /opt/certs
+          #   name: sslcerts
+          #   readOnly: true
+          resources:
+            requests:
+              memory: "400Mi"
+              cpu: "300m"
+            limits:
+              memory: "600Mi"
+              cpu: "500m"
+            # readinessProbe:
+            #   tcpSocket:
+            #     port: 3032
+            #   initialDelaySeconds: 60
+            #   periodSeconds: 10
+            # livenessProbe:
+            #   tcpSocket:
+            #     port: 3032
+            #   initialDelaySeconds: 60
+            #   periodSeconds: 20
+      volumes:
+      - name: service-account-credentials-volume
+        secret:
+          secretName: pubsub-bq-secret
+          items:
+          - key: pubsub-access-credentials
+            path: credentials.json
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-back-chimu-auth-svc
+  namespace: dev
+spec:
+  type:  ClusterIP
+  selector:
+    app: ms-back-chimu-auth
+  ports:
+  - protocol: TCP
+    port:  8080
+    targetPort:  3032
+    name: tcp-8080

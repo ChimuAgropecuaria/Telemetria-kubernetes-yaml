@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress2-ms-ingress-chimu
+  namespace: dev
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://localhost:3000,http://localhost:3001,https://*.sateldata.cl,http://localhost:5173"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "ksession"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+    # nginx.ingress.kubernetes.io/affinity-mode: balanced
+    # nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+    nginx.ingress.kubernetes.io/session-cookie-secure	: "true"
+    nginx.ingress.kubernetes.io/session-cookie-samesite: None
+  # nginx.ingress.kubernetes.io/websocket-services: "ms-back-chimu-auth-svc"
+
+    # nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # nginx.ingress.kubernetes.io/websocket-services: "ms-back-chimu-auth-svc"
+    # nginx.org/websocket-services: "ms-back-chimu-auth-svc"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - back.k8s.sateldata.cl
+      secretName: back-k8s-tls
+  rules:
+    - host: back.k8s.sateldata.cl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ms-back-chimu-auth-svc
+                port:
+                  number: 8080
+    - host: be.chimu.sateldata.cl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prod-ms-back-chimu-auth-svc
+                port:
+                  number: 8080
+
+
+  #ingressClassName: "nginx"

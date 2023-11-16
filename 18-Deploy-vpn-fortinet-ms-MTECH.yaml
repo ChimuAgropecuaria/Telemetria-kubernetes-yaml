@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ms-chimu-vpn-mssql
+  namespace: dev
+  labels:
+    app: ms-chimu-vpn-mssql
+    tier: backend
+spec:
+  #replicas: 1
+  imagePullSecrets:
+    - name: cregistry-bq-secret
+  containers:
+    - name: mssql-mtech-chimu
+      #imagen v1.0.25 OK
+      #imagen v1.0.26 OK
+      #imagen v1.0.27 OK consulta stats lenta
+      image: gcr.io/chimu-335413/mssql_mtech_chimu:v1.0.28
+      envFrom:
+        - secretRef:
+              name: secret-ms-ingress
+      volumeMounts:
+      - mountPath: /opt/gcp
+        name: service-account-credentials-volume
+        readOnly: true
+    # initContainers:
+    - name: vpn-mtech-chimu
+      image: gcr.io/chimu-335413/vpn_mtech_chimu:v1.0.10
+      envFrom:
+        - secretRef:
+              name: secret-ms-ingress
+      stdin: true
+      tty: true
+      securityContext:
+        privileged: true
+        capabilities:
+          add:
+            - NET_ADMIN
+  volumes:
+  - name: service-account-credentials-volume
+    secret:
+      secretName: pubsub-bq-secret
+      items:
+      - key: pubsub-access-credentials
+        path: credentials.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-chimu-vpn-mssql-svc
+  namespace: dev
+spec:
+  type:  ClusterIP
+  selector:
+    app: ms-chimu-vpn-mssql
+  ports:
+  - protocol: TCP
+    port:  8080
+    targetPort:  3020
+    name: tcp-8080
